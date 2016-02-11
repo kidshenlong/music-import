@@ -1,15 +1,63 @@
 #!/usr/bin/env php
 <?php require __DIR__ . '/vendor/autoload.php';
-$playlist_id = isset($argv[1]) ? $argv[1] : "none set";
+use GuzzleHttp\Client;
+
+function dd($info){
+    var_dump($info);
+    die();
+}
 
 
-echo $playlist_id;
-/*use GuzzleHttp\Client;
+if(isset($argv[1])){
+    $playlist_id = $argv[1];
+} else {
+    throw new Exception("Playlist ID Not Set.");
+}
 
-$client = new Client([
-    // Base URI is used with relative requests
-    'base_uri' => 'http://httpbin.org',
-    // You can set any number of default request options.
-    'timeout'  => 2.0,
-]);*/
+$client = new Client();
 
+
+$request = $client->request('GET', 'https://www.googleapis.com/youtube/v3/playlistItems', [
+    'query' => [
+        'part' => 'snippet',
+        'maxResults' => '20',
+        'playlistId' => $playlist_id,
+        'key' => 'XXX'
+    ]
+]);
+
+$playlistItems = json_decode($request->getBody(), true);
+$tracks = [];
+foreach ($playlistItems['items'] as $item) {
+    $trackItem = $item['snippet']['title'];
+    if(substr_count($trackItem, "-") == 1){
+        $trackInfo = explode("-", $item['snippet']['title']);
+        $title = trim(preg_replace("/\[[^)]+\]/", "", preg_replace("/\([^)]+\)/","", $trackInfo[1])));
+        array_push($tracks, [ "artist" => trim($trackInfo[0]), "title" => $title]);
+    }
+}
+
+//dd(json_encode($trackTitles));
+foreach($tracks as $track) {
+    //dd($track);
+    $musicRequest = $client->request('POST', 'https://api.live.bbc.co.uk/music/v2/records/automatch', [
+        'json' => [
+            "track" => $track["title"],
+            "artists" => [[
+                "name" => $track["artist"],
+                "role" => "PERFORMER"
+            ]],
+            "type" => "SINGLE"
+        ],
+        //'ssl_key' => '/Users/pattem92/workspace/dev.bbc.co.uk.pem',
+        'cert'              => '/Users/pattem92/workspace/dev.bbc.co.uk.pem',
+        //'ssl_key'              => ['/Users/pattem92/workspace/client.p12', 'client'],
+        //'cert'              => ['/Users/pattem92/workspace/client.p12', 'client']
+        //'cert'              => '/Users/pattem92/workspace/ca.pem',
+        //'ssl_key'           => '/Users/pattem92/workspace/dev.bbc.co.uk.pem',
+        //'verify'            => '/Users/pattem92/workspace/ca.pem',
+        //'verify'            => '/Users/pattem92/workspace/dev.bbc.co.uk.pemd'
+        "ssl_key" => ['/etc/pki/tls/private/client.p12', 'client']
+    ]);
+
+}
