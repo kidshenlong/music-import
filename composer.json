@@ -1,0 +1,15 @@
+{
+    "name": "pattem92/music-import",
+    "description": "Import Track from YouTube into your BBC Music Playlist",
+    "require": {
+        "guzzlehttp/guzzle": "^6.1",
+        "vlucas/phpdotenv": "^2.2"
+    },
+    "license": "Mit",
+    "authors": [
+        {
+            "name": "Michael Patterson-Muir",
+            "email": "michael.patterson-muir@bbc.co.uk"
+        }
+    ]
+}
